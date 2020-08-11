@@ -1,0 +1,1 @@
+/lustre/export/home/sylee/programfile/triodenovo.0.06/src/triodenovo --ped trio.ped --in_vcf input.vcf --out denovo.vcf
