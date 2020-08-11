@@ -17,6 +17,7 @@ cd ${work_dir}/result/gatk
 
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx8g -Xms8g" IndexFeatureFile -I /lustre/export/home/sylee/Hanchinese/try3/result/gatk/total.hc.g.vcf.gz
 
+ls *.GenotypeGVCF.g.vcf| while read id; do
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
     -V /lustre/export/home/sylee/Hanchinese/try1/material/renamed_whole_cFather.gvcf \
     -V /lustre/export/home/sylee/Hanchinese/try1/material/cm_renamed.gvcf \
@@ -24,6 +25,7 @@ cd ${work_dir}/result/gatk
     --genomicsdb-workspace-path /lustre/export/home/sylee/Hanchinese/try3/result/gatk/database \
     --tmp-dir /home/sylee/tmp/ \
     --reader-threads 5 \
+done;
 
 ls *.GenotypeGVCF.g.vcf| while read id; do
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx5g -Xms5g" \
