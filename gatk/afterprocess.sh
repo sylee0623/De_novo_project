@@ -15,7 +15,6 @@ TILEDB_DISABLE_FILE_LOCKING=1
 
 cd ${work_dir}/result/gatk
 
-ls *.sorted.markdup.bam| while read id; do
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx8g -Xms8g" IndexFeatureFile -I /lustre/export/home/sylee/Hanchinese/try3/result/gatk/total.hc.g.vcf.gz
 
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
@@ -26,6 +25,7 @@ ls *.sorted.markdup.bam| while read id; do
     --tmp-dir /home/sylee/tmp/ \
     --reader-threads 5 \
 
+ls *.GenotypeGVCF.g.vcf| while read id; do
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx5g -Xms5g" \
     GenotypeGVCFs \
         -R ${reference} \
@@ -48,7 +48,9 @@ ls *.GenotypeGVCF.g.vcf| while read id; do
     -resource:dbsnp,known=true,training=false,truth=false,prior=2 /lustre/export/home/sylee/ucsc_hg19/dbsnp_138.hg19.vcf \
     -O ${work_dir}/result/gatk/VariantRecalibrator/indels.recal \
     --tranches-file ${work_dir}/result/gatk/VariantRecalibrator/indels.tranches
+done;
 
+ls *.GenotypeGVCF.g.vcf| while read id; do
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx8g -Xms8g" VariantRecalibrator \
     -V ${work_dir}/result/gatk/$id \
     --trust-all-polymorphic \
@@ -62,7 +64,9 @@ ls *.GenotypeGVCF.g.vcf| while read id; do
     -resource:dbsnp,known=true,training=false,truth=false,prior=7 /lustre/export/home/sylee/ucsc_hg19/dbsnp_138.hg19.vcf \
     -O ${work_dir}/result/gatk/result/gatk/VariantRecalibrator/snps.recal \
     --tranches-file ${work_dir}/result/gatk/result/gatk/VariantRecalibrator/snps.tranches
+done;
 
+ls *.GenotypeGVCF.g.vcf| while read id; do
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx5g -Xms5g" \
     ApplyVQSR \
     -V ${work_dir}/result/gatk/$id \
@@ -72,7 +76,9 @@ ls *.GenotypeGVCF.g.vcf| while read id; do
     --create-output-variant-index true \
     -mode INDEL \
     -O ${work_dir}/result/gatk/indels_ApplyVQSR.vcf
+done;
 
+ls *.GenotypeGVCF.g.vcf| while read id; do
 /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx8g -Xms8g" \
     ApplyVQSR \
     -V ${work_dir}/result/gatk/indels_ApplyVQSR.vcf \
@@ -82,7 +88,7 @@ ls *.GenotypeGVCF.g.vcf| while read id; do
     --create-output-variant-index true \
     -mode SNP \
     -O ${work_dir}/result/gatk/result/gatk/VariantRecalibrator/snp_applyVQSR.vcf
-done
+done;
 
 ls *.snp_applyVQSR.vcf| while read id; do
     /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx8g -Xms8g" \
@@ -91,7 +97,7 @@ ls *.snp_applyVQSR.vcf| while read id; do
         -V ${work_dir}/result/gatk/$id \
         -O ${work_dir}/result/gatk/result/gatk/calculategenotypeposteriors.vcf \
         -ped /lustre/export/home/sylee/Hanchinese/filter/wholechromosome/family.ped
-done
+done;
 
 ls *.calculategenotypeposteriors.vcf| while read id; do
     /lustre/export/home/sylee/programfile/gatk-4.1.7.0/gatk --java-options "-Xmx8g -Xms8g" \
@@ -100,22 +106,51 @@ ls *.calculategenotypeposteriors.vcf| while read id; do
         -V ${work_dir}/result/gatk/$id \
         --genotype-filter-expression "GQ < 20" --genotype-filter-name "lowGQ" \
         -O ${work_dir}/result/gatk/result/gatk/gq20filtered.vcf
-done
+done;
 
 ls *.gq20filtered.vcf| while read id; do
     /lustre/export/home/sylee/gatk-4.1.7.0/gatk --java-options "-Xmx8g -Xms8g" \
-        VariantAnnotator \
-        -R ${reference} \
-        -V ${work_dir}/result/gatk/$id \
-        -O ${work_dir}/result/gatk/result/gatk/variantannotator.vcf \
-        -A PossibleDeNovo \
-        -ped /lustre/export/home/sylee/Hanchinese/filter/wholechromosome/family.ped
+        gatk SelectVariants \
+        -V input.vcf \
+        --mendelian-violation true \
+        --mendelian-violation-qual-threshold 20 \
+        -ped family.ped \
+        --exclude-filtered true \
+        -O output.vcf
+done;
 
-mkdir ../gatk_refine
 
-grep '#' variantannotator.vcf > ../gatk_refine/${sample}_hiConfDeNovo.vcf
-grep hiConfDeNovo variantannotator.vcf >> ../gatk_refine/${sample}_hiConfDeNovo.vcf
-grep '#' variantannotator.vcf > ../gatk_refine/${sample}_allDeNovo.vcf
-grep DeNovo variantannotator.vcf >> ../gatk_refine/${sample}_allDeNovo.vcf
+ls *.gq20filtered.vcf| while read id; do
+gatk SelectVariants \
+-V input.vcf \
+--restrict-alleles-to BIALLELIC \
+-O output.biallelic.vcf
+done;
 
-done
+
+ls *.gq20filtered.vcf| while read id; do
+gatk SelectVariants \
+     -R ucsc.hg19.fasta \
+     -V VQSR_finished.vcf \
+     --select-type-to-include SNP \
+     -select 'vc.getGenotype("Chinese").isHet()' \
+     -O SNVonly.vcf \
+done;
+
+
+ls *.gq20filtered.vcf| while read id; do
+gatk SelectVariants \
+     -R ucsc.hg19.fasta \
+     -V VQSR_finished.vcf \
+     --select-type-to-include INDEL \
+     -O Indelonly.vcf \
+done;
+
+
+ls *.gq20filtered.vcf| while read id; do
+gatk VariantAnnotator \
+-R data/ucsc.hg19.fasta \
+-V input.vcf \
+-A AlleleFraction \
+-O annotated.vcf
+done;
